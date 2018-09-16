@@ -10,10 +10,8 @@
     <script src="https://d3js.org/d3.v5.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/plottable.js/3.8.3/plottable.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/plottable.js/3.8.3/plottable.js"></script>
-    <script src="credentials.js"></script>
     <script src="dataclient.js"></script>
-    <script>
-        console.log(credentials)
+    <!-- <script>
         console.log(DatahubClient.metrics_query_body.objectType)
         DatahubClient.login(credentials).then(function(token) {
             console.log('Login ok')
@@ -22,13 +20,11 @@
             console.log('Error!')
             console.log(err)
         })
-    </script>
-
+    </script> -->
 </head>
-
 <body>
     <p>
-        <button onclick="updateData()">Update</button>
+        <button onclick="updatePlot()">Update</button>
     </p>
     <div id="chart" style="width: 100%; height: 400px"></div>
     <script src="chart.js"></script>

@@ -1,74 +1,109 @@
+
+function makeLabel(string) {
+    return new Plottable.Components.Label(string, 0)
+    .addClass("selected")
+    .xAlignment("left");
+  }
+
 function parseISOString(s) {
     var b = s.split(/\D+/);
     return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
   }
 
-function makeBasicChart(data) {
+function makeDatasets(metrics) {
+    var colourList = [
+        '#3366CC',
+        '#DC3912',
+        '#FF9900',
+        '#109618',
+        '#990099',
+        '#3B3EAC',
+        '#0099C6',
+        '#DD4477',
+        '#66AA00',
+        '#B82E2E',
+        '#316395',
+        '#994499',
+        '#22AA99',
+        '#AAAA11',
+        '#6633CC',
+        '#E67300',
+        '#8B0707',
+        '#329262',
+        '#5574A6',
+        '#3B3EAC',
+    ]
+    
+    var ds_map = {}
+    var color_ndx = 0;
+    for(metric in metrics) {
+        if(metrics.hasOwnProperty(metric)) {
+            ds_map[metric] = {
+                dataset: new Plottable.Dataset(metrics[metric], {"color": colourList[color_ndx++]}),
+                include: true
+            }
+        }
+    }
+    return ds_map
+}
 
-    // var xScale = new Plottable.Scales.Linear();
+function updateDatasets(ds_map, metrics) {
+    for(metric in metrics) {
+        if(metrics.hasOwnProperty(metric)) {
+            ds_map[metric].dataset.data(metrics[metric])
+        }
+    }
+}
+
+function showChart(data) {
     var yScale = new Plottable.Scales.Linear();
     var xTScale = new Plottable.Scales.Time();
-
-    // var xAxis = new Plottable.Axes.Numeric(xScale, "bottom");
+    
     var yAxis = new Plottable.Axes.Numeric(yScale, "left");
     var xTAxis = new Plottable.Axes.Time(xTScale, "bottom")
 
     var plot = new Plottable.Plots.Line();
-    // plot.x(function(d) { return d.x; }, xScale);
-    plot.x(function(d) { return d.x; }, xTScale);
+    plot.x(function(d) { return parseISOString(d.x); }, xTScale);
     plot.y(function(d) { return d.y; }, yScale);
+    plot.attr("stroke", function(d, i, ds) { return ds.metadata().color; });
 
+    var ds_map = makeDatasets(data)
 
-    // var data2 = [
-    //     { x: parseISOString("2018-09-09T15:58:59.768Z"), y: 1 },
-    //     { x: parseISOString("2018-09-09T16:28:59.334Z"), y: 2 },
-    //     { x: parseISOString("2018-09-09T16:29:59.364Z"), y: 4 },
-    //     { x: parseISOString("2018-09-09T16:30:59.394Z"), y: 8 }        
-    // ];
-
-    var dataset = new Plottable.Dataset(data);
-    plot.addDataset(dataset);
-
-    // var dataset2 = new Plottable.Dataset(data2);
-    // plot.addDataset(dataset2);
-
+    var labArray = []
+    for (objname in ds_map) {
+        if(ds_map.hasOwnProperty(objname)) {
+            labArray.push([makeLabel(objname)]);
+            if(ds_map[objname].include) 
+                plot.addDataset(ds_map[objname].dataset)
+        }
+    }
+    var labels = new Plottable.Components.Table(labArray);
     var chart = new Plottable.Components.Table([
+        // [null, labels],
         [yAxis, plot],
         [null, xTAxis]
     ]);
 
     chart.renderTo("div#chart");
 
-    return plot;
+    return ds_map;
 }
 
-var myplot = null;
-
-var data = [
-    { x: parseISOString("2018-09-09T15:50:59.768Z"), y: 1 },
-    { x: parseISOString("2018-09-09T16:20:59.334Z"), y: 2 },
-    { x: parseISOString("2018-09-09T16:22:59.364Z"), y: 4 },
-    { x: parseISOString("2018-09-09T16:32:59.394Z"), y: 8 }        
-];
-
-
-function fetchData() {
+function loadAndPlot() {
     DatahubClient.getMetrics2().then(function(data) {
-	console.log(data)
+        dataset_map = showChart(data);
     }).catch(function(err) {console.log(err)})
 }
 
-
-function updateData() {
-    let n = data.length
-    for(var i = 0; i < n-1; i++) {
-        data[i] = data[i+1]
-    }
-    data[n-1] = { x: parseISOString("2018-09-09T16:42:59.394Z"), y: 12 }
-    myplot.datasets()[0].data(data);
+function updatePlot() {
+    DatahubClient.getMetrics2().then(function(data) {
+        updateDatasets(dataset_map,data);
+    }).catch(function(err) {console.log(err)})
 }
 
+var dataset_map = {}
+
 window.onload = function() {
-    myplot = makeBasicChart(data);
-    fetchData();
+    loadAndPlot()
+    // setInterval(loadAndPlot, 30000);
 };

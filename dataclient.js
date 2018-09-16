@@ -60,12 +60,12 @@ var DatahubClient = {
 	    this.metrics_query_body.interval = from.toISOString()+'/'+until.toISOString()
 	    xhr.send(this.metrics_query_body)
 	})    
-    }
+    },
 
     getMetrics2: function(credentials, monitored_object, interval_secs) {
 	return new Promise((resolve, reject) => {
 	    var xhr = new XMLHttpRequest();
-	    xhr.open("GET", 'http://localhost:9123/', true);
+	    xhr.open("GET", 'http://172.22.1.208:9123/', true);
 
 	    //Send the proper header information along with the request
 	    xhr.setRequestHeader("Content-Type", "application/json");
@@ -74,8 +74,8 @@ var DatahubClient = {
 	    xhr.onreadystatechange = function() {//Call a function when the state changes.
 		if(this.readyState == XMLHttpRequest.DONE) {
 		    if(this.status == 200) {
-			console.log(xhr.response.json)
-			resolve(xhr.response.json)
+			console.log(xhr.response)
+			resolve(JSON.parse(xhr.response))
 		    } else {
 			reject('Response code was '+this.status)
 		    }
