@@ -3,26 +3,20 @@ function parseISOString(s) {
   return new Date(Date.UTC(b[0], --b[1], b[2], b[3], b[4], b[5], b[6]));
 }
 
+function prep() {
+  var xAxis = new Plottable.Axes.Time(xScale, "bottom");
+  var yAxis = new Plottable.Axes.Numeric(yScale, "left");
+  var yLabel = new Plottable.Components.AxisLabel("Metric", -90);
 
-var xScale = new Plottable.Scales.Time();
-var yScale = new Plottable.Scales.Linear();
-var colorScale = new Plottable.Scales.Color();
+  var legend = new Plottable.Components.Legend(colorScale).maxEntriesPerRow(3);
+  var table = new Plottable.Components.Table([
+    [null, legend],
+    [yAxis, plots],
+    [null, xAxis]
+  ]);
 
-var xAxis = new Plottable.Axes.Time(xScale, "bottom");
-var yAxis = new Plottable.Axes.Numeric(yScale, "left");
-var yLabel = new Plottable.Components.AxisLabel("Metric", -90);
-
-var legend = new Plottable.Components.Legend(colorScale).maxEntriesPerRow(3);
-var plots = new Plottable.Components.Group();
-
-var table = new Plottable.Components.Table([
-  [null, legend],
-  [yAxis, plots],
-  [null, xAxis]
-]);
-
-table.renderTo("div#chart");
-
+  table.renderTo("div#chart");
+}
 
 function makeDatasets(metrics) {
   var ds_array = []
@@ -44,11 +38,6 @@ function updateDatasets(ds_array, metrics) {
   return ds_array
 }
 
-  new Plottable.Dataset(metrics[metric], {"color": colourList[color_ndx++]})
-}
-
-var datasets = []
-
 function plotDatasets(datasets) {
   datasets.forEach(function(ds) {
     plots.append(new Plottable.Plots.Line()
@@ -57,11 +46,27 @@ function plotDatasets(datasets) {
     .y(function(d) { return d.y; }, yScale)
     .attr("stroke", colorScale.scale(ds.metadata().name))
     .attr("stroke-width", 1)
-  );
-});
+  )})
+}
+
+function updatePlot() {
+  DatahubClient.getMetrics2().then(function(data) {
+    updateDatasets(datasets, data)
+  }).catch(function(err) {console.log(err)})
+}
 
 
-DatahubClient.getMetrics2().then(function(data) {
-  datasets = updateDatasets(data);
-  plotDatasets(datasets)
-}).catch(function(err) {console.log(err)})
+var datasets = []
+var xScale = new Plottable.Scales.Time();
+var yScale = new Plottable.Scales.Linear();
+var colorScale = new Plottable.Scales.Color();
+var plots = new Plottable.Components.Group();
+
+
+window.onload = function() {
+  prep()
+  DatahubClient.getMetrics2().then(function(data) {
+    datasets = makeDatasets(data);
+    plotDatasets(datasets)
+  }).catch(function(err) {console.log(err)})
+};
